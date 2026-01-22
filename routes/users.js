@@ -40,17 +40,28 @@ router.post('/', authMiddleware, async (req, res) => {
 // PUT /users/:id
 router.put('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
-  // Included 'name' and 'deleted' in the extraction
-  const { name, username, role, isadmin, deleted } = req.body;
+  const { name, username, role, isadmin, deleted, password_hash } = req.body;
+
   try {
-    // Added 'name' and 'deleted' to the UPDATE query
-    const result = await pool.query(
-      'UPDATE users SET name=$1, username=$2, role=$3, isadmin=$4, deleted=$5 WHERE id=$6 RETURNING *',
-      [name, username, role, isadmin, deleted || false, id]
-    );
+    let result;
+    
+    if (password_hash && password_hash.length > 0) {
+      // 1. If a password is provided, HASH IT before saving
+      const hashedPassword = await bcrypt.hash(password_hash, 10);
+      result = await pool.query(
+        'UPDATE users SET name=$1, username=$2, role=$3, isadmin=$4, deleted=$5, password_hash=$6 WHERE id=$7 RETURNING *',
+        [name, username, role, isadmin, deleted || false, hashedPassword, id]
+      );
+    } else {
+      // 2. If no password is provided, update other fields only
+      result = await pool.query(
+        'UPDATE users SET name=$1, username=$2, role=$3, isadmin=$4, deleted=$5 WHERE id=$6 RETURNING *',
+        [name, username, role, isadmin, deleted || false, id]
+      );
+    }
 
     if (result.rows.length === 0) {
-        return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "User not found" });
     }
 
     res.json(result.rows[0]);
