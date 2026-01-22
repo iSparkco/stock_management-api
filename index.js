@@ -74,7 +74,7 @@ const loginRouter = require('./routes/login');
 const productsRouter = require('./routes/products');
 const invoiceRouter = require('./routes/invoices'); // ✅ FIXED
 const userRouter = require('./routes/users'); // ✅ FIXED
-const uploadRouter = require('./routes/upload'); // ✅ FIXED
+//const uploadRouter = require('./routes/upload'); // ✅ FIXED
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -91,7 +91,7 @@ app.use('/login', loginRouter);
 app.use('/products', productsRouter);
 app.use('/invoices', invoiceRouter);
 app.use('/users', userRouter);
-app.use('/upload', uploadRouter);
+//app.use('/upload', uploadRouter);
 // Serve images publicly
 app.use(
   '/images',

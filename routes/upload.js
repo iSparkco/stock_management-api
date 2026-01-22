@@ -1,7 +1,9 @@
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
 const app = express();
+
+
+
 
 // 1. This tells the server: "When someone asks for /images, look in the images folder"
 app.use('/images', express.static('images'));
