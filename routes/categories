@@ -1,0 +1,67 @@
+const express = require('express');
+const router = express.Router();
+const pool = require('../db');
+const authMiddleware = require('../middleware/authMiddleware');
+
+// GET /categories - Fetch all categories
+router.get('/', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, ctg_name_en, ctg_name_fr, ctg_name_ar FROM categories ORDER BY id'
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch categories' });
+  }
+});
+
+// POST /categories - Add a new category
+router.post('/', authMiddleware, async (req, res) => {
+  const { ctg_name_en, ctg_name_fr, ctg_name_ar } = req.body;
+  try {
+    const result = await pool.query(
+      'INSERT INTO categories (ctg_name_en, ctg_name_fr, ctg_name_ar) VALUES ($1, $2, $3) RETURNING *',
+      [ctg_name_en, ctg_name_fr, ctg_name_ar]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to add category' });
+  }
+});
+
+// PUT /categories/:id - Update a category
+router.put('/:id', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const { ctg_name_en, ctg_name_fr, ctg_name_ar } = req.body;
+  try {
+    const result = await pool.query(
+      'UPDATE categories SET ctg_name_en=$1, ctg_name_fr=$2, ctg_name_ar=$3 WHERE id=$4 RETURNING *',
+      [ctg_name_en, ctg_name_fr, ctg_name_ar, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to update category' });
+  }
+});
+
+// DELETE /categories/:id - Delete a category
+router.delete('/:id', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query('DELETE FROM categories WHERE id=$1', [id]);
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to delete category' });
+  }
+});
+
+module.exports = router;
