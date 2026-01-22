@@ -19,10 +19,10 @@ router.get('/', authMiddleware, async (req, res) => {
 
 // POST /users
 router.post('/', authMiddleware, async (req, res) => {
-  const { username, password, role, isadmin } = req.body;
+  const { username, password_hash, role, isadmin } = req.body;
   try {
     // Hash the password to store in the password_hash column
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password_hash, 10);
     
     const result = await pool.query(
       'INSERT INTO users (username, password_hash, role, isadmin) VALUES ($1, $2, $3, $4) RETURNING *',
