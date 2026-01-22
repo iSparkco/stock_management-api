@@ -74,6 +74,7 @@ const loginRouter = require('./routes/login');
 const productsRouter = require('./routes/products');
 const invoiceRouter = require('./routes/invoices'); // ✅ FIXED
 const userRouter = require('./routes/users'); // ✅ FIXED
+const categoriesRouter = require('./routes/categories'); // ✅ FIXED
 const uploadRouter = require('./routes/upload'); // ✅ FIXED
 
 
@@ -95,6 +96,7 @@ app.use('/login', loginRouter);
 app.use('/products', productsRouter);
 app.use('/invoices', invoiceRouter);
 app.use('/users', userRouter);
+app.use('/categories', categoriesRouter);
 app.use('/upload', uploadRouter); // This tells express: "Any request starting with /upload should use the uploadRoutes file"
 
 // Serve images publicly
