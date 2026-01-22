@@ -7,9 +7,10 @@ const bcrypt = require('bcrypt');
 // GET /users
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    // We select password_hash in case the C# app needs to verify something, 
-    // but usually, it's safer to omit it unless needed for a specific logic.
-    const result = await pool.query('SELECT id, username, password_hash, role, isadmin FROM users ORDER BY id');
+    // Added 'name' and 'deleted' to match your C# class
+    const result = await pool.query(
+      'SELECT id, name, username, password_hash, role, isadmin, deleted FROM users WHERE deleted = false ORDER BY id'
+    );
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -19,18 +20,19 @@ router.get('/', authMiddleware, async (req, res) => {
 
 // POST /users
 router.post('/', authMiddleware, async (req, res) => {
-  const { username, password_hash, role, isadmin } = req.body;
+  // Extract 'name' from req.body to match C# class
+  const { name, username, password_hash, role, isadmin } = req.body;
   try {
-    // Hash the password to store in the password_hash column
     const hashedPassword = await bcrypt.hash(password_hash, 10);
     
+    // Included 'name' in the INSERT query
     const result = await pool.query(
-      'INSERT INTO users (username, password_hash, role, isadmin) VALUES ($1, $2, $3, $4) RETURNING *',
-      [username, hashedPassword, role, isadmin]
+      'INSERT INTO users (name, username, password_hash, role, isadmin, deleted) VALUES ($1, $2, $3, $4, $5, false) RETURNING *',
+      [name, username, hashedPassword, role, isadmin]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    console.error(err);
+    console.error("POST ERROR:", err.message);
     res.status(500).json({ message: 'Failed to add user' });
   }
 });
@@ -38,24 +40,32 @@ router.post('/', authMiddleware, async (req, res) => {
 // PUT /users/:id
 router.put('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
-  const { username, role, isadmin } = req.body;
+  // Included 'name' and 'deleted' in the extraction
+  const { name, username, role, isadmin, deleted } = req.body;
   try {
+    // Added 'name' and 'deleted' to the UPDATE query
     const result = await pool.query(
-      'UPDATE users SET username=$1, role=$2, isadmin=$3 WHERE id=$4 RETURNING *',
-      [username, role, isadmin, id]
+      'UPDATE users SET name=$1, username=$2, role=$3, isadmin=$4, deleted=$5 WHERE id=$6 RETURNING *',
+      [name, username, role, isadmin, deleted || false, id]
     );
+
+    if (result.rows.length === 0) {
+        return res.status(404).json({ message: "User not found" });
+    }
+
     res.json(result.rows[0]);
   } catch (err) {
-    console.error(err);
+    console.error("PUT ERROR:", err.message);
     res.status(500).json({ message: 'Failed to update user' });
   }
 });
 
-// DELETE /users/:id
+// DELETE /users/:id (Soft Delete)
 router.delete('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
   try {
-    await pool.query('DELETE FROM users WHERE id=$1', [id]);
+    // Instead of deleting, we set deleted = true to match your C# model logic
+    await pool.query('UPDATE users SET deleted = true WHERE id=$1', [id]);
     res.status(204).send();
   } catch (err) {
     console.error(err);
