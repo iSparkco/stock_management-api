@@ -73,6 +73,7 @@ const path = require('path');
 const loginRouter = require('./routes/login');
 const productsRouter = require('./routes/products');
 const invoiceRouter = require('./routes/invoices'); // ✅ FIXED
+const userRouter = require('./routes/users'); // ✅ FIXED
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -88,6 +89,7 @@ app.use(express.json());
 app.use('/login', loginRouter);
 app.use('/products', productsRouter);
 app.use('/invoices', invoiceRouter);
+app.use('/users', invoiceRouter);
 // Serve images publicly
 app.use(
   '/images',
