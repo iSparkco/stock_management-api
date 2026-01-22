@@ -74,7 +74,11 @@ const loginRouter = require('./routes/login');
 const productsRouter = require('./routes/products');
 const invoiceRouter = require('./routes/invoices'); // ✅ FIXED
 const userRouter = require('./routes/users'); // ✅ FIXED
-//const uploadRouter = require('./routes/upload'); // ✅ FIXED
+const uploadRouter = require('./routes/upload'); // ✅ FIXED
+
+
+
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -86,12 +90,13 @@ console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'LOADED' : 'MISSING');
 app.use(cors());
 app.use(express.json());
 
-// Routes
+// Routes 
 app.use('/login', loginRouter);
 app.use('/products', productsRouter);
 app.use('/invoices', invoiceRouter);
 app.use('/users', userRouter);
-//app.use('/upload', uploadRouter);
+app.use('/upload', uploadRouter); // This tells express: "Any request starting with /upload should use the uploadRoutes file"
+
 // Serve images publicly
 app.use(
   '/images',

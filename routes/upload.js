@@ -26,3 +26,8 @@ app.post('/upload', upload.single('image'), (req, res) => {
     // req.file.filename is the NEW name (e.g., "1737532800-myfile.jpg")
     res.json({ filename: req.file.filename }); 
 });
+
+
+
+// Correct way (CommonJS)
+module.exports = router;
