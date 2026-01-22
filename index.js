@@ -89,7 +89,7 @@ app.use(express.json());
 app.use('/login', loginRouter);
 app.use('/products', productsRouter);
 app.use('/invoices', invoiceRouter);
-app.use('/users', invoiceRouter);
+app.use('/users', userRouter);
 // Serve images publicly
 app.use(
   '/images',
