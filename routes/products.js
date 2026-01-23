@@ -35,7 +35,7 @@ router.post('/', authMiddleware, async (req, res) => {
       INSERT INTO products (
         name_en, name_fr, name_ar, code, 
         image_url, price, qty, brand, 
-        unit, categoryid, deleted, created_at
+        unit, categoryid, deleted, created_date
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false, NOW()) 
       RETURNING *`;
 
