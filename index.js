@@ -77,7 +77,8 @@ const userRouter = require('./routes/users'); // ✅ FIXED
 const categoriesRouter = require('./routes/categories'); // ✅ FIXED
 const uploadRouter = require('./routes/upload'); // ✅ FIXED
 
-
+// 1. Serves the files so you can see them in a browser
+app.use('/images', express.static('images'));
 
 
 
