@@ -1,33 +1,33 @@
 const express = require('express');
-const multer = require('multer');
-const app = express();
 const router = express.Router();
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
+// Ensure 'images' folder exists
+const dir = './images';
+if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir);
+}
 
-
-// 1. This tells the server: "When someone asks for /images, look in the images folder"
-app.use('/images', express.static('images'));
-
-// 2. This tells Multer: "Save uploaded files into the images folder"
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'images/'); 
     },
     filename: (req, file, cb) => {
-        // Renames file to: 1737532800-myfile.jpg
         cb(null, Date.now() + '-' + file.originalname);
     }
 });
 
 const upload = multer({ storage: storage });
 
-// 3. This is the ENDPOINT. C# sends the file HERE.
-app.post('/upload', upload.single('image'), (req, res) => {
-    // req.file.filename is the NEW name (e.g., "1737532800-myfile.jpg")
+// IMPORTANT: This route is now relative to where you mount it in index.js
+// If index.js has app.use('/upload', uploadRoutes), then this matches POST /upload
+router.post('/', upload.single('image'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+    }
     res.json({ filename: req.file.filename }); 
 });
 
-
-
-// Correct way (CommonJS)
 module.exports = router;
