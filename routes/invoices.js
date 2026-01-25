@@ -200,7 +200,7 @@ router.get('/', authMiddleware, async (req, res) => {
             'name', u.name
           )
           FROM users u
-          WHERE u.id = i.user_id
+          WHERE u.id = i.userid
         ) AS user,
         -- Aggregate invoice items into a nested JSON array
         COALESCE(
