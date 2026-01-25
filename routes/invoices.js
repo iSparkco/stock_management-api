@@ -187,7 +187,35 @@ router.get('/project/:projectName', authMiddleware, async (req, res) => {
 });
 
 
+router.get('/all-invoices', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        i.*, 
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'product_id', ii.product_id,
+              'qty', ii.qty,
+              'price', ii.price,
+              'name_en', p.name_en
+            )
+          ) FILTER (WHERE ii.id IS NOT NULL),
+          '[]'
+        ) AS items
+      FROM invoices i
+      LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
+      LEFT JOIN products p ON ii.product_id = p.id
+      GROUP BY i.id
+      ORDER BY i.created_at DESC
+    `);
 
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Fetch all invoices error:', err);
+    res.status(500).json({ message: 'Failed to fetch all invoices' });
+  }
+});
 
 
 module.exports = router;
