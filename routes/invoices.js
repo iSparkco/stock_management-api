@@ -186,12 +186,19 @@ router.get('/project/:projectName', authMiddleware, async (req, res) => {
   }
 });
 
-
+//Get Invoices
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
         i.*, 
+        -- Create a User Object
+        json_build_object(
+          'id', u.id,
+          'username', u.username,
+          'email', u.email
+        ) AS user,
+        -- Create the Items Array
         COALESCE(
           json_agg(
             json_build_object(
@@ -204,9 +211,10 @@ router.get('/', authMiddleware, async (req, res) => {
           '[]'
         ) AS items
       FROM invoices i
+      INNER JOIN users u ON i.user_id = u.id  -- Join to get user details
       LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
       LEFT JOIN products p ON ii.product_id = p.id
-      GROUP BY i.id
+      GROUP BY i.id, u.id  -- Must include u.id because we are selecting from u
       ORDER BY i.created_at DESC
     `);
 
