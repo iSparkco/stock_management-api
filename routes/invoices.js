@@ -192,7 +192,7 @@ router.get('/', authMiddleware, async (req, res) => {
     const result = await pool.query(`
       SELECT 
         i.*, 
-        -- Select user details as a nested JSON object
+        -- 1. Subquery to fetch the user object
         (
           SELECT json_build_object(
             'id', u.id,
@@ -200,9 +200,9 @@ router.get('/', authMiddleware, async (req, res) => {
             'name', u.name
           )
           FROM users u
-          WHERE u.id = i.userid
+          WHERE u.id = i.userid -- DOUBLE CHECK: Is your column 'userid' or 'user_id'?
         ) AS user,
-        -- Aggregate invoice items into a nested JSON array
+        -- 2. Aggregate the items
         COALESCE(
           json_agg(
             json_build_object(
