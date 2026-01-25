@@ -187,7 +187,7 @@ router.get('/project/:projectName', authMiddleware, async (req, res) => {
 });
 
 
-router.get('/invoices', authMiddleware, async (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
