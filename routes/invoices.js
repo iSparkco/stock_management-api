@@ -213,7 +213,7 @@ router.get('/', authMiddleware, async (req, res) => {
             )
           ) FILTER (WHERE ii.id IS NOT NULL),
           '[]'
-        ) AS items
+        ) AS invoice_items
       FROM invoices i
       LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
       LEFT JOIN products p ON ii.product_id = p.id
