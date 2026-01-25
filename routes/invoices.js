@@ -192,13 +192,17 @@ router.get('/', authMiddleware, async (req, res) => {
     const result = await pool.query(`
       SELECT 
         i.*, 
-        -- Create a User Object
-        json_build_object(
-          'id', u.id,
-          'username', u.username,
-          'name', u.name
+        -- Select user details as a nested JSON object
+        (
+          SELECT json_build_object(
+            'id', u.id,
+            'username', u.username,
+            'name', u.name
+          )
+          FROM users u
+          WHERE u.id = i.user_id
         ) AS user,
-        -- Create the Items Array
+        -- Aggregate invoice items into a nested JSON array
         COALESCE(
           json_agg(
             json_build_object(
@@ -211,10 +215,9 @@ router.get('/', authMiddleware, async (req, res) => {
           '[]'
         ) AS items
       FROM invoices i
-      INNER JOIN users u ON i.user_id = u.id  -- Join to get user details
       LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
       LEFT JOIN products p ON ii.product_id = p.id
-      GROUP BY i.id, u.id  -- Must include u.id because we are selecting from u
+      GROUP BY i.id
       ORDER BY i.created_at DESC
     `);
 
