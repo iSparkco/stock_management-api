@@ -6,18 +6,29 @@ const authMiddleware = require('../middleware/authMiddleware');
 // GET /products - Fetch all non-deleted products
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    // We join with categories so the C# app can see category data if needed
     const query = `
-      SELECT p.*, c.ctg_name_en, c.ctg_name_fr, c.ctg_name_ar 
+      SELECT 
+        p.*, 
+        -- Build the nested categories object
+        (
+          SELECT json_build_object(
+            'id', c.id,
+            'ctg_name_en', c.ctg_name_en,
+            'ctg_name_fr', c.ctg_name_fr,
+            'ctg_name_ar', c.ctg_name_ar
+          )
+          FROM categories c
+          WHERE c.id = p.categoryid
+        ) AS categories
       FROM products p
-      LEFT JOIN categories c ON p.categoryid = c.id
       WHERE p.deleted = false
       ORDER BY p.id DESC
     `;
+    
     const result = await pool.query(query);
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
+    console.error('Fetch products error:', err);
     res.status(500).json({ message: 'Failed to fetch products' });
   }
 });
