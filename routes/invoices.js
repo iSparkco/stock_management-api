@@ -192,7 +192,7 @@ router.get('/', authMiddleware, async (req, res) => {
     const result = await pool.query(`
       SELECT 
         i.*, 
-        -- Alias changed to 'users' to match your C# class property
+        -- User object (already working)
         (
           SELECT json_build_object(
             'id', u.id,
@@ -202,18 +202,23 @@ router.get('/', authMiddleware, async (req, res) => {
           FROM users u
           WHERE u.id = i.userid
         ) AS users, 
-        -- Items mapping
+        -- Items mapping: Fixed to include nested 'products' object
         COALESCE(
           json_agg(
             json_build_object(
+              'invoice_id', ii.invoice_id,
               'product_id', ii.product_id,
               'qty', ii.qty,
               'price', ii.price,
-              'name_en', p.name_en
+              -- This creates the nested 'products' object your C# class expects
+              'products', json_build_object(
+                'id', p.id,
+                'name_en', p.name_en
+              )
             )
           ) FILTER (WHERE ii.id IS NOT NULL),
           '[]'
-        ) AS invoice_items
+        ) AS items
       FROM invoices i
       LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
       LEFT JOIN products p ON ii.product_id = p.id
