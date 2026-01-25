@@ -192,7 +192,7 @@ router.get('/', authMiddleware, async (req, res) => {
     const result = await pool.query(`
       SELECT 
         i.*, 
-        -- 1. Subquery to fetch the user object
+        -- Alias changed to 'users' to match your C# class property
         (
           SELECT json_build_object(
             'id', u.id,
@@ -200,9 +200,9 @@ router.get('/', authMiddleware, async (req, res) => {
             'name', u.name
           )
           FROM users u
-          WHERE u.id = i.userid -- DOUBLE CHECK: Is your column 'userid' or 'user_id'?
-        ) AS user,
-        -- 2. Aggregate the items
+          WHERE u.id = i.userid
+        ) AS users, 
+        -- Items mapping
         COALESCE(
           json_agg(
             json_build_object(
@@ -223,8 +223,8 @@ router.get('/', authMiddleware, async (req, res) => {
 
     res.json(result.rows);
   } catch (err) {
-    console.error('Fetch all invoices error:', err);
-    res.status(500).json({ message: 'Failed to fetch all invoices' });
+    console.error('Fetch error:', err);
+    res.status(500).json({ message: 'Failed to fetch' });
   }
 });
 
