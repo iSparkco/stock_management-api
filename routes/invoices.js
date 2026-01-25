@@ -196,7 +196,7 @@ router.get('/', authMiddleware, async (req, res) => {
         json_build_object(
           'id', u.id,
           'username', u.username,
-          'email', u.email
+          'name', u.name
         ) AS user,
         -- Create the Items Array
         COALESCE(
