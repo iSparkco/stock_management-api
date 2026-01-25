@@ -234,4 +234,62 @@ router.get('/', authMiddleware, async (req, res) => {
 });
 
 
+router.get('/search', authMiddleware, async (req, res) => {
+  const { userId, startDate, endDate, invoiceNb, projectName } = req.query;
+
+  let filters = [];
+  let values = [];
+
+  // Dynamically build the WHERE clause
+  if (userId) {
+    values.push(userId);
+    filters.push(`i.userid = $${values.length}`);
+  }
+  if (startDate && endDate) {
+    values.push(startDate, endDate);
+    filters.push(`i.created_at::date BETWEEN $${values.length - 1} AND $${values.length}`);
+  }
+  if (invoiceNb) {
+    values.push(invoiceNb);
+    filters.push(`i.invoice_nb = $${values.length}`);
+  }
+  if (projectName) {
+    values.push(`%${projectName}%`);
+    filters.push(`i.project_name ILIKE $${values.length}`);
+  }
+
+  const whereClause = filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : '';
+
+  try {
+    const query = `
+      SELECT i.*, 
+        (SELECT json_build_object('id', u.id, 'username', u.username, 'name', u.name)
+         FROM users u WHERE u.id = i.userid) AS users,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'product_id', ii.product_id,
+              'qty', ii.qty,
+              'price', ii.price,
+              'products', json_build_object('id', p.id, 'name_en', p.name_en)
+            )
+          ) FILTER (WHERE ii.id IS NOT NULL), '[]'
+        ) AS items
+      FROM invoices i
+      LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
+      LEFT JOIN products p ON ii.product_id = p.id
+      ${whereClause}
+      GROUP BY i.id
+      ORDER BY i.created_at DESC
+    `;
+
+    const result = await pool.query(query, values);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Search error:', err);
+    res.status(500).json({ message: 'Failed to fetch invoices' });
+  }
+});
+
+
 module.exports = router;
