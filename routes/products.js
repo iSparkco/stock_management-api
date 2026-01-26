@@ -115,66 +115,63 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
 //get products by specific filter
 router.get('/', authMiddleware, async (req, res) => {
-  const { 
-    name_en, name_fr, name_ar, 
-    categoryid, brand, code, 
-    unit, minPrice, maxPrice, 
-    startDate, endDate 
-  } = req.query;
+  const { id, name_en, name_fr, name_ar, categoryid, brand, code, minPrice, maxPrice, startDate, endDate } = req.query;
 
-  let filters = ['p.deleted = false']; // Always filter out deleted items
+  let filters = ['p.deleted = false'];
   let values = [];
 
-  // Helper to add filters safely
-  const addFilter = (column, value, operator = '=') => {
-    if (value !== undefined && value !== null && value !== '') {
-      values.push(operator === 'ILIKE' ? `%${value}%` : value);
-      filters.push(`${column} ${operator} $${values.length}`);
-    }
-  };
+  // 1. Check if we are searching by a specific ID
+  if (id) {
+    values.push(id);
+    filters.push(`p.id = $${values.length}`);
+  } 
+  // 2. Otherwise, build the dynamic search
+  else {
+    const addFilter = (column, value, operator = '=') => {
+      if (value !== undefined && value !== null && value !== '') {
+        values.push(operator === 'ILIKE' ? `%${value}%` : value);
+        filters.push(`${column} ${operator} $${values.length}`);
+      }
+    };
 
-  addFilter('p.name_en', name_en, 'ILIKE');
-  addFilter('p.name_fr', name_fr, 'ILIKE');
-  addFilter('p.name_ar', name_ar, 'ILIKE');
-  addFilter('p.categoryid', categoryid);
-  addFilter('p.brand', brand, 'ILIKE');
-  addFilter('p.code', code);
-  addFilter('p.unit', unit);
-  
-  if (minPrice) addFilter('p.price', minPrice, '>=');
-  if (maxPrice) addFilter('p.price', maxPrice, '<=');
-  
-  if (startDate && endDate) {
-    values.push(startDate, endDate);
-    filters.push(`p.created_at::date BETWEEN $${values.length - 1} AND $${values.length}`);
+    addFilter('p.name_en', name_en, 'ILIKE');
+    addFilter('p.name_fr', name_fr, 'ILIKE');
+    addFilter('p.name_ar', name_ar, 'ILIKE');
+    addFilter('p.categoryid', categoryid);
+    addFilter('p.brand', brand, 'ILIKE');
+    addFilter('p.code', code);
+    
+    if (minPrice) addFilter('p.price', minPrice, '>=');
+    if (maxPrice) addFilter('p.price', maxPrice, '<=');
+    
+    if (startDate && endDate) {
+      values.push(startDate, endDate);
+      filters.push(`p.created_at::date BETWEEN $${values.length - 1} AND $${values.length}`);
+    }
   }
 
-  const whereClause = `WHERE ${filters.join(' AND ')}`;
+  const query = `
+    SELECT p.*, 
+      (SELECT json_build_object(
+          'id', c.id, 
+          'ctg_name_en', c.ctg_name_en, 
+          'ctg_name_fr', c.ctg_name_fr, 
+          'ctg_name_ar', c.ctg_name_ar
+       ) FROM categories c WHERE c.id = p.categoryid
+      ) AS categories
+    FROM products p
+    WHERE ${filters.join(' AND ')}
+    ORDER BY p.id DESC
+  `;
 
   try {
-    const query = `
-      SELECT p.*, 
-        (SELECT json_build_object(
-            'id', c.id, 
-            'ctg_name_en', c.ctg_name_en, 
-            'ctg_name_fr', c.ctg_name_fr, 
-            'ctg_name_ar', c.ctg_name_ar
-         ) FROM categories c WHERE c.id = p.categoryid
-        ) AS categories
-      FROM products p
-      ${whereClause}
-      ORDER BY p.id DESC
-    `;
-
     const result = await pool.query(query, values);
-    res.json(result.rows);
+    res.json(result.rows); // Returns a list (even for 1 item) to keep C# logic simple
   } catch (err) {
-    console.error('Fetch products error:', err);
-    res.status(500).json({ message: 'Failed to fetch products' });
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
-
-
 
 
 module.exports = router;
