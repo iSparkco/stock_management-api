@@ -115,18 +115,22 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
 //get products by specific filter
 router.get('/', authMiddleware, async (req, res) => {
-  const { id, name_en, name_fr, name_ar, categoryid, brand, code, minPrice, maxPrice, startDate, endDate } = req.query;
+  const { 
+    id, name_en, name_fr, name_ar, 
+    categoryid, brand, code, unit,
+    minPrice, maxPrice, startDate, endDate 
+  } = req.query;
 
   let filters = ['p.deleted = false'];
   let values = [];
 
-  // 1. Check if we are searching by a specific ID
+  // 1. If ID is provided, it takes priority over all other filters
   if (id) {
     values.push(id);
     filters.push(`p.id = $${values.length}`);
   } 
-  // 2. Otherwise, build the dynamic search
   else {
+    // 2. Dynamic filter builder
     const addFilter = (column, value, operator = '=') => {
       if (value !== undefined && value !== null && value !== '') {
         values.push(operator === 'ILIKE' ? `%${value}%` : value);
@@ -140,6 +144,7 @@ router.get('/', authMiddleware, async (req, res) => {
     addFilter('p.categoryid', categoryid);
     addFilter('p.brand', brand, 'ILIKE');
     addFilter('p.code', code);
+    addFilter('p.unit', unit); // Added Unit Filter
     
     if (minPrice) addFilter('p.price', minPrice, '>=');
     if (maxPrice) addFilter('p.price', maxPrice, '<=');
@@ -166,10 +171,10 @@ router.get('/', authMiddleware, async (req, res) => {
 
   try {
     const result = await pool.query(query, values);
-    res.json(result.rows); // Returns a list (even for 1 item) to keep C# logic simple
+    res.json(result.rows);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error('Fetch products error:', err.message);
+    res.status(500).json({ message: 'Failed to fetch products' });
   }
 });
 
