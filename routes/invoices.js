@@ -5,10 +5,14 @@ const authMiddleware = require('../middleware/authMiddleware');
 
 // POST /invoices – create invoice
 router.post('/', authMiddleware, async (req, res) => {
-  const { customer_name, total, items } = req.body;
+  // Destructure fields including project_name, notes, and invoice_nb
+  const { project_name, notes, invoice_nb, total, items } = req.body;
+  
+  // Extract user ID from the auth middleware
+  const loggedUserId = req.user.id; 
 
-  if (!customer_name || !items || !Array.isArray(items)) {
-    return res.status(400).json({ message: 'Invalid request body' });
+  if (!project_name || !invoice_nb || !items || !Array.isArray(items)) {
+    return res.status(400).json({ message: 'Invalid request body: Project name and Invoice number are required' });
   }
 
   const client = await pool.connect();
@@ -16,17 +20,18 @@ router.post('/', authMiddleware, async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // Insert invoice
+    // 1. Insert invoice using 'userid' and 'time' columns
+    // Use CURRENT_TIME for the 'time' column to get the clock time specifically
     const invoiceRes = await client.query(
-      `INSERT INTO invoices (project_name, total, created_at)
-       VALUES ($1, $2, NOW())
-       RETURNING id, customer_name, total, created_at`,
-      [customer_name, total]
+      `INSERT INTO invoices (project_name, notes, invoice_nb, userid, total, created_at, time)
+       VALUES ($1, $2, $3, $4, $5, NOW(), CURRENT_TIME)
+       RETURNING id, project_name, notes, invoice_nb, total, created_at, time`,
+      [project_name, notes, invoice_nb, loggedUserId, total]
     );
 
     const invoice = invoiceRes.rows[0];
 
-    // Insert items
+    // 2. Insert invoice items
     for (const item of items) {
       await client.query(
         `INSERT INTO invoice_items (invoice_id, product_id, qty, price)
