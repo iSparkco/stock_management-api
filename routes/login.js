@@ -20,7 +20,6 @@ router.post('/', async (req, res) => {
 
     const user = result.rows[0];
 
-    // ✅ FIXED COLUMN NAME
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
       return res.status(401).json({ message: 'Invalid username or password' });
@@ -31,14 +30,13 @@ router.post('/', async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
     );
-     // 4. Send BOTH token and user_id back to Flutter
-      res.json({
-        token,
-        user_id: user.id, // This is what Flutter saves to SharedPreferences
-        username: user.username
-        
-      });
-    //res.json({ token });
+
+    // ✅ Key 'user_id' sent to match Flutter extraction
+    res.json({
+      token,
+      user_id: user.id, 
+      username: user.username
+    });
   } catch (err) {
     console.error('LOGIN ERROR:', err);
     res.status(500).json({ message: 'Server error' });
