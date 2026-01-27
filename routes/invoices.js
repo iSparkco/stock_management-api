@@ -3,6 +3,29 @@ const router = express.Router();
 const pool = require('../db');
 const authMiddleware = require('../middleware/authMiddleware');
 
+
+
+/// 1. GET THE LATEST INVOICE NUMBER
+/// This must be placed BEFORE any /:id routes
+router.get('/last', authMiddleware, async (req, res) => {
+  try {
+    // We fetch only the most recent invoice_nb
+    const result = await pool.query(
+      'SELECT invoice_nb FROM invoices ORDER BY created_at DESC, id DESC LIMIT 1'
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({ invoice_nb: null });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error fetching last invoice:', err);
+    res.status(500).json({ message: 'Server error fetching invoice number' });
+  }
+});
+
+
 // POST /invoices – create invoice
 // Note: Changed from '/invoices' to '/' because the router is mounted at /invoices
 router.post('/', authMiddleware, async (req, res) => {
