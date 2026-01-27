@@ -4,7 +4,7 @@ const pool = require('../db');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // POST /invoices – create invoice
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/invoices', authMiddleware, async (req, res) => {
   // Destructure fields including project_name, notes, and invoice_nb
   const { project_name, notes, invoice_nb, total, items } = req.body;
   
