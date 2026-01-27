@@ -34,7 +34,7 @@ router.post('/', async (req, res) => {
      // 4. Send BOTH token and user_id back to Flutter
       res.json({
         token,
-        userid: user.id, // This is what Flutter saves to SharedPreferences
+        user_id: user.id, // This is what Flutter saves to SharedPreferences
         username: user.username
         
       });
