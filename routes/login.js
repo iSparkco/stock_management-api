@@ -31,7 +31,13 @@ router.post('/', async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
     );
-
+     // 4. Send BOTH token and user_id back to Flutter
+      res.json({
+        token,
+        user_id: user.id, // This is what Flutter saves to SharedPreferences
+        username: user.username
+        
+      });
     res.json({ token });
   } catch (err) {
     console.error('LOGIN ERROR:', err);
