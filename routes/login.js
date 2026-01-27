@@ -34,11 +34,11 @@ router.post('/', async (req, res) => {
      // 4. Send BOTH token and user_id back to Flutter
       res.json({
         token,
-        user_id: user.id, // This is what Flutter saves to SharedPreferences
+        userid: user.id, // This is what Flutter saves to SharedPreferences
         username: user.username
         
       });
-    res.json({ token });
+    //res.json({ token });
   } catch (err) {
     console.error('LOGIN ERROR:', err);
     res.status(500).json({ message: 'Server error' });
