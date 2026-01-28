@@ -34,12 +34,27 @@ router.post('/', authMiddleware, async (req, res) => {
 // PUT /categories/:id - Update a category
 router.put('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
-  const { ctg_name_en, ctg_name_fr, ctg_name_ar } = req.body;
+  const { ctg_name_en, ctg_name_fr, ctg_name_ar, deleted } = req.body;
+
   try {
-    const result = await pool.query(
-      'UPDATE categories SET ctg_name_en=$1, ctg_name_fr=$2, ctg_name_ar=$3 WHERE id=$4 RETURNING *',
-      [ctg_name_en, ctg_name_fr, ctg_name_ar, id]
-    );
+    const query = `
+      UPDATE categories 
+      SET ctg_name_en=$1, 
+          ctg_name_fr=$2, 
+          ctg_name_ar=$3, 
+          deleted=$4 
+      WHERE id=$5 
+      RETURNING *`;
+
+    const values = [
+      ctg_name_en, 
+      ctg_name_fr, 
+      ctg_name_ar, 
+      deleted ?? false, // Defaults to false if deleted is null/undefined
+      id
+    ];
+
+    const result = await pool.query(query, values);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Category not found' });
@@ -47,7 +62,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
     
     res.json(result.rows[0]);
   } catch (err) {
-    console.error(err);
+    console.error('Update category error:', err.message);
     res.status(500).json({ message: 'Failed to update category' });
   }
 });
