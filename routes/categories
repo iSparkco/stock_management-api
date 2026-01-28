@@ -3,18 +3,25 @@ const router = express.Router();
 const pool = require('../db');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// GET /categories - Fetch all categories
+
+// GET /categories - Fetch only non-deleted categories
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT id, ctg_name_en, ctg_name_fr, ctg_name_ar FROM categories ORDER BY id'
-    );
+    const query = `
+      SELECT id, ctg_name_en, ctg_name_fr, ctg_name_ar 
+      FROM categories 
+      WHERE deleted = false 
+      ORDER BY id DESC
+    `;
+    
+    const result = await pool.query(query);
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
+    console.error('Fetch categories error:', err.message);
     res.status(500).json({ message: 'Failed to fetch categories' });
   }
 });
+
 
 // POST /categories - Add a new category
 router.post('/', authMiddleware, async (req, res) => {
