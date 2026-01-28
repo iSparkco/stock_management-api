@@ -113,6 +113,37 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   }
 });
 
+// GET /products/:id - Fetch a single product by ID
+router.get('/:id', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const query = `
+      SELECT p.*, 
+        (SELECT json_build_object(
+            'id', c.id, 
+            'ctg_name_en', c.ctg_name_en, 
+            'ctg_name_fr', c.ctg_name_fr, 
+            'ctg_name_ar', c.ctg_name_ar
+         ) FROM categories c WHERE c.id = p.categoryid
+        ) AS categories
+      FROM products p
+      WHERE p.id = $1 AND p.deleted = false
+    `;
+    const result = await pool.query(query, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Fetch product by ID error:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+
 //get products by specific filter
 router.get('/', authMiddleware, async (req, res) => {
   const { 
