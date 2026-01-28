@@ -34,7 +34,8 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-// 2. GET /products/:id - Fetch a single product by ID (Must be above generic GET)
+// 2. GET /products/:id - Fetch a single product by ID
+// Note: filtered by deleted = false
 router.get('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
   try {
@@ -53,7 +54,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
     const result = await pool.query(query, [id]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Product not found' });
+      return res.status(404).json({ message: 'Product not found or has been deleted' });
     }
 
     res.json(result.rows[0]);
@@ -63,7 +64,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// 3. GET /products - Fetch all products or filter them (Merged duplicates)
+// 3. GET /products - Fetch all products or filter them (CLEAN & CONSOLIDATED)
 router.get('/', authMiddleware, async (req, res) => {
   const { 
     id, name_en, name_fr, name_ar, 
@@ -71,10 +72,11 @@ router.get('/', authMiddleware, async (req, res) => {
     minPrice, maxPrice, startDate, endDate 
   } = req.query;
 
+  // BASE FILTER: Always exclude deleted items
   let filters = ['p.deleted = false'];
   let values = [];
 
-  // If ID is provided as a query param (?id=...)
+  // If ID is provided as a query param (?id=...) it takes precedence
   if (id) {
     values.push(id);
     filters.push(`p.id = $${values.length}`);
