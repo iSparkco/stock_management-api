@@ -18,7 +18,35 @@ router.get('/last', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
+// 5. GET ALL INVOICES
+router.get('/', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT i.*, 
+        (SELECT json_build_object('id', u.id, 'username', u.username, 'name', u.name)
+         FROM users u WHERE u.id = i.userid) AS users, 
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'invoice_id', ii.invoice_id,
+              'product_id', ii.product_id,
+              'qty', ii.qty,
+              'price', ii.price,
+              'products', json_build_object('id', p.id, 'name_en', p.name_en)
+            )
+          ) FILTER (WHERE ii.id IS NOT NULL), '[]'
+        ) AS items
+      FROM invoices i
+      LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
+      LEFT JOIN products p ON ii.product_id = p.id
+      GROUP BY i.id
+      ORDER BY i.created_at DESC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch' });
+  }
+});
 // 2. SEARCH INVOICES (Moved up to avoid conflict with /:id params)
 router.get('/search', authMiddleware, async (req, res) => {
   const { userId, startDate, endDate, invoiceNb, projectName } = req.query;
@@ -135,35 +163,7 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
   }
 });
 
-// 5. GET ALL INVOICES
-router.get('/', authMiddleware, async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT i.*, 
-        (SELECT json_build_object('id', u.id, 'username', u.username, 'name', u.name)
-         FROM users u WHERE u.id = i.userid) AS users, 
-        COALESCE(
-          json_agg(
-            json_build_object(
-              'invoice_id', ii.invoice_id,
-              'product_id', ii.product_id,
-              'qty', ii.qty,
-              'price', ii.price,
-              'products', json_build_object('id', p.id, 'name_en', p.name_en)
-            )
-          ) FILTER (WHERE ii.id IS NOT NULL), '[]'
-        ) AS items
-      FROM invoices i
-      LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
-      LEFT JOIN products p ON ii.product_id = p.id
-      GROUP BY i.id
-      ORDER BY i.created_at DESC
-    `);
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch' });
-  }
-});
+
 
 // Keep other specialty routes below...
 router.get('/range', authMiddleware, async (req, res) => { /* same as your original with column checks */ });
