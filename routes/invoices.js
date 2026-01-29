@@ -19,35 +19,6 @@ router.get('/last', authMiddleware, async (req, res) => {
   }
 });
 
-// Get count of invoices for weekly and monthly reports
-router.get('/stats/counts', authMiddleware, async (req, res) => {
-  try {
-    const query = `
-      SELECT 
-        -- Count of invoices in the last 7 days
-        (SELECT COUNT(id) FROM invoices 
-         WHERE created_at >= NOW() - INTERVAL '7 days' AND deleted = false) AS weekly_invoice_count,
-        
-        -- Count of invoices in the last 30 days
-        (SELECT COUNT(id) FROM invoices 
-         WHERE created_at >= NOW() - INTERVAL '30 days' AND deleted = false) AS monthly_invoice_count,
-        
-        -- Total count of all non-deleted invoices
-        (SELECT COUNT(id) FROM invoices WHERE deleted = false) AS total_invoice_count
-    `;
-
-    const result = await pool.query(query);
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error('Fetch invoice counts error:', err.message);
-    res.status(500).json({ message: 'Failed to fetch invoice counts' });
-  }
-});
-
-
-
-
-
 // 5. GET ALL INVOICES
 router.get('/', authMiddleware, async (req, res) => {
   try {
