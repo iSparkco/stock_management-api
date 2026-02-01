@@ -167,8 +167,8 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
 
 
 // Keep other specialty routes below...
-router.get('/range', authMiddleware, async (req, res) => { /* same as your original with column checks */ });
-router.get('/number/:invoiceNb', authMiddleware, async (req, res) => { /* same as your original */ });
-router.get('/project/:projectName', authMiddleware, async (req, res) => { /* same as your original */ });
+//router.get('/range', authMiddleware, async (req, res) => { /* same as your original with column checks */ });
+//router.get('/number/:invoiceNb', authMiddleware, async (req, res) => { /* same as your original */ });
+//router.get('/project/:projectName', authMiddleware, async (req, res) => { /* same as your original */ });
 
 module.exports = router;
