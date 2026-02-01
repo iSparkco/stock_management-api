@@ -50,22 +50,31 @@ router.get('/', authMiddleware, async (req, res) => {
 });
 // 2. SEARCH INVOICES (Moved up to avoid conflict with /:id params)
 router.get('/invoices/search', authMiddleware, async (req, res) => {
+  // Extracting query parameters sent from C# HttpClient
   const { userId, startDate, endDate, invoiceNb, projectName } = req.query;
+  
   let filters = [];
   let values = [];
 
+  // Filter by User ID
   if (userId) {
     values.push(userId);
     filters.push(`i.userid = $${values.length}`);
   }
+
+  // Filter by Date Range (Matches startDate and endDate from C#)
   if (startDate && endDate) {
     values.push(startDate, endDate);
     filters.push(`i.created_at::date BETWEEN $${values.length - 1} AND $${values.length}`);
   }
+
+  // Filter by Invoice Number (Exact match)
   if (invoiceNb) {
     values.push(invoiceNb);
     filters.push(`i.invoice_nb = $${values.length}`);
   }
+
+  // Filter by Project Name (Partial match using ILIKE)
   if (projectName) {
     values.push(`%${projectName}%`);
     filters.push(`i.project_name ILIKE $${values.length}`);
@@ -95,6 +104,7 @@ router.get('/invoices/search', authMiddleware, async (req, res) => {
       GROUP BY i.id
       ORDER BY i.created_at DESC
     `;
+
     const result = await pool.query(query, values);
     res.json(result.rows);
   } catch (err) {
