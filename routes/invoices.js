@@ -49,7 +49,7 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 // 2. SEARCH INVOICES (Moved up to avoid conflict with /:id params)
-router.get('/search', authMiddleware, async (req, res) => {
+router.get('/invoices/search', authMiddleware, async (req, res) => {
   const { userId, startDate, endDate, invoiceNb, projectName } = req.query;
   let filters = [];
   let values = [];
