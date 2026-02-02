@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const authMiddleware = require('../middleware/authMiddleware');
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 1. GET THE LATEST INVOICE NUMBER
 router.get('/last', authMiddleware, async (req, res) => {
   try {
@@ -18,7 +18,7 @@ router.get('/last', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 5. GET ALL INVOICES
 router.get('/', authMiddleware, async (req, res) => {
   try {
@@ -48,6 +48,8 @@ router.get('/', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch' });
   }
 });
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 2. SEARCH INVOICES (Moved up to avoid conflict with /:id params)
 router.get('/search', authMiddleware, async (req, res) => {
   // Extracting query parameters sent from C# HttpClient
@@ -112,7 +114,7 @@ router.get('/search', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Search failed' });
   }
 });
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 3. POST /invoices
 router.post('/', authMiddleware, async (req, res) => {
   const { project_name, notes, invoice_nb, total, items } = req.body;
@@ -149,7 +151,7 @@ router.post('/', authMiddleware, async (req, res) => {
     client.release();
   }
 });
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 4. GET BY USER ID (Corrected user_id to userid)
 router.get('/user/:userId', authMiddleware, async (req, res) => {
   const { userId } = req.params;
@@ -173,7 +175,7 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch' });
   }
 });
-
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 // Keep other specialty routes below...
