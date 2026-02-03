@@ -128,8 +128,8 @@ router.get('/', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch products' });
   }
 });
-
-// 4. PUT /products/:id - Update a product
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+// 4. PUT /:id - Update a product
 router.put('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
   const { 
@@ -164,7 +164,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Failed to update product' });
   }
 });
-
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 5. DELETE /products/:id (Soft Delete)
 router.delete('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
@@ -176,5 +176,21 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Failed to delete product' });
   }
 });
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Get product details by ID
+router.get('/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('SELECT id, name_en, code FROM products WHERE id = $1', [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 module.exports = router;
