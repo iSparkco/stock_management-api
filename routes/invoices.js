@@ -176,8 +176,39 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
   }
 });
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Function to update the project name of a specific invoice
+router.put('/invoices/:id', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const { project_name } = req.body;
 
+  // Basic validation
+  if (!project_name) {
+    return res.status(400).json({ message: 'Project name is required' });
+  }
 
+  try {
+    const query = `
+      UPDATE invoices 
+      SET project_name = $1 
+      WHERE id = $2 
+      RETURNING *;
+    `;
+    const values = [project_name, id];
+
+    const result = await pool.query(query, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Invoice not found' });
+    }
+
+    console.log(`Invoice ${id} updated with new project name: ${project_name}`);
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error updating project name:', err.message);
+    res.status(500).json({ message: 'Server error while updating project name' });
+  }
+});
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Keep other specialty routes below...
 //router.get('/range', authMiddleware, async (req, res) => { /* same as your original with column checks */ });
 //router.get('/number/:invoiceNb', authMiddleware, async (req, res) => { /* same as your original */ });
