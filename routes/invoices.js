@@ -177,7 +177,7 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
 });
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Function to update the project name of a specific invoice
-router.put('/invoices/:id', authMiddleware, async (req, res) => {
+router.put('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
   const { project_name } = req.body;
 
