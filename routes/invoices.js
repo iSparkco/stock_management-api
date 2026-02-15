@@ -208,6 +208,52 @@ router.put('/:id', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Server error while updating project name' });
   }
 });
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Function to update the validated status
+router.put('/:id', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const { validated } = req.body; // Expecting { "validated": true/false }
+
+  if (typeof validated !== 'boolean') {
+    return res.status(400).json({ message: 'Validated status (boolean) is required' });
+  }
+
+  try {
+    const query = `UPDATE invoices SET validated = $1 WHERE id = $2 RETURNING *;`;
+    const result = await pool.query(query, [validated, id]);
+
+    if (result.rows.length === 0) return res.status(404).json({ message: 'Invoice not found' });
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: 'Error updating validation' });
+  }
+});
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Function to update the deleted status
+router.put('/:id', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const { deleted } = req.body; // Expecting { "deleted": true/false }
+
+  if (typeof deleted !== 'boolean') {
+    return res.status(400).json({ message: 'Deleted status (boolean) is required' });
+  }
+
+  try {
+    const query = `UPDATE invoices SET deleted = $1 WHERE id = $2 RETURNING *;`;
+    const result = await pool.query(query, [deleted, id]);
+
+    if (result.rows.length === 0) return res.status(404).json({ message: 'Invoice not found' });
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: 'Error updating deleted status' });
+  }
+});
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Keep other specialty routes below...
 //router.get('/range', authMiddleware, async (req, res) => { /* same as your original with column checks */ });
