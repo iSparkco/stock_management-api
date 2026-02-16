@@ -213,45 +213,45 @@ router.put('/:id', authMiddleware, async (req, res) => {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Function to update the validated status
 router.put('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
-  const { validated } = req.body; // Expecting { "validated": true/false }
+  const updates = req.body; // Contains { project_name: "..." } or { deleted: true }
 
-  if (typeof validated !== 'boolean') {
-    return res.status(400).json({ message: 'Validated status (boolean) is required' });
+  // 1. Get the keys (column names) from the body
+  const keys = Object.keys(updates);
+  
+  if (keys.length === 0) {
+    return res.status(400).json({ message: 'No fields provided for update' });
   }
 
   try {
-    const query = `UPDATE invoices SET validated = $1 WHERE id = $2 RETURNING *;`;
-    const result = await pool.query(query, [validated, id]);
+    // 2. Build a dynamic SQL query
+    // Example result: SET project_name = $1 WHERE id = $2
+    const setClause = keys.map((key, index) => `${key} = $${index + 1}`).join(', ');
+    const values = keys.map(key => updates[key]);
+    
+    // Add the ID as the last parameter
+    values.push(id);
+    const idParamIndex = values.length;
 
-    if (result.rows.length === 0) return res.status(404).json({ message: 'Invoice not found' });
+    const query = `
+      UPDATE invoices 
+      SET ${setClause} 
+      WHERE id = $${idParamIndex} 
+      RETURNING *;
+    `;
 
+    const result = await pool.query(query, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Invoice not found' });
+    }
+
+    console.log(`Invoice ${id} updated:`, updates);
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ message: 'Error updating validation' });
-  }
-});
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Function to update the deleted status
-router.put('/:id', authMiddleware, async (req, res) => {
-  const { id } = req.params;
-  const { deleted } = req.body; // Expecting { "deleted": true/false }
-
-  if (typeof deleted !== 'boolean') {
-    return res.status(400).json({ message: 'Deleted status (boolean) is required' });
-  }
-
-  try {
-    const query = `UPDATE invoices SET deleted = $1 WHERE id = $2 RETURNING *;`;
-    const result = await pool.query(query, [deleted, id]);
-
-    if (result.rows.length === 0) return res.status(404).json({ message: 'Invoice not found' });
-
-    res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ message: 'Error updating deleted status' });
+    console.error('Update Error:', err.message);
+    res.status(500).json({ message: 'Server error during dynamic update' });
   }
 });
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
