@@ -48,6 +48,55 @@ router.get('/', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch' });
   }
 });
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+router.get('/search', authMiddleware, async (req, res) => {
+  // 1. Extract parameters from req.query (matches C# queryParams)
+  const { userId, startDate, endDate, invoiceNb, projectName } = req.query;
+
+  try {
+    let query = `SELECT * FROM invoices WHERE 1=1`; // "WHERE 1=1" makes appending "AND" easy
+    const values = [];
+    let paramIndex = 1;
+
+    // 2. Dynamically add filters based on what C# sent
+    if (userId) {
+      query += ` AND user_id = $${paramIndex++}`;
+      values.push(userId);
+    }
+
+    if (startDate && endDate) {
+      query += ` AND created_at >= $${paramIndex++} AND created_at <= $${paramIndex++}`;
+      values.push(startDate, endDate);
+    }
+
+    if (invoiceNb) {
+      // Using ILIKE for partial/case-insensitive search
+      query += ` AND invoice_number ILIKE $${paramIndex++}`;
+      values.push(`%${invoiceNb}%`);
+    }
+
+    if (projectName) {
+      query += ` AND project_name ILIKE $${paramIndex++}`;
+      values.push(`%${projectName}%`);
+    }
+
+    // 3. Add ordering (optional but recommended)
+    query += ` ORDER BY created_at DESC;`;
+
+    const result = await pool.query(query, values);
+    
+    // 4. Return the list (matches DeserializeObject<List<invoices>>)
+    res.json(result.rows);
+
+  } catch (err) {
+    console.error('Search Error:', err.message);
+    res.status(500).json({ message: 'Server error during search' });
+  }
+});
+
+
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 2. SEARCH INVOICES (Moved up to avoid conflict with /:id params)
