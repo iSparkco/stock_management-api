@@ -50,50 +50,7 @@ router.get('/', authMiddleware, async (req, res) => {
 });
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-router.get('/search', authMiddleware, async (req, res) => {
-  // 1. Extract parameters from req.query (matches C# queryParams)
-  const { userId, startDate, endDate, invoiceNb, projectName } = req.query;
 
-  try {
-    let query = `SELECT * FROM invoices WHERE 1=1`; // "WHERE 1=1" makes appending "AND" easy
-    const values = [];
-    let paramIndex = 1;
-
-    // 2. Dynamically add filters based on what C# sent
-    if (userId) {
-      query += ` AND user_id = $${paramIndex++}`;
-      values.push(userId);
-    }
-
-    if (startDate && endDate) {
-      query += ` AND created_at >= $${paramIndex++} AND created_at <= $${paramIndex++}`;
-      values.push(startDate, endDate);
-    }
-
-    if (invoiceNb) {
-      // Using ILIKE for partial/case-insensitive search
-      query += ` AND invoice_number ILIKE $${paramIndex++}`;
-      values.push(`%${invoiceNb}%`);
-    }
-
-    if (projectName) {
-      query += ` AND project_name ILIKE $${paramIndex++}`;
-      values.push(`%${projectName}%`);
-    }
-
-    // 3. Add ordering (optional but recommended)
-    query += ` ORDER BY created_at DESC;`;
-
-    const result = await pool.query(query, values);
-    
-    // 4. Return the list (matches DeserializeObject<List<invoices>>)
-    res.json(result.rows);
-
-  } catch (err) {
-    console.error('Search Error:', err.message);
-    res.status(500).json({ message: 'Server error during search' });
-  }
-});
 
 
 
@@ -226,37 +183,7 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
 });
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Function to update the project name of a specific invoice
-router.put('/:id', authMiddleware, async (req, res) => {
-  const { id } = req.params;
-  const { project_name } = req.body;
 
-  // Basic validation
-  if (!project_name) {
-    return res.status(400).json({ message: 'Project name is required' });
-  }
-
-  try {
-    const query = `
-      UPDATE invoices 
-      SET project_name = $1 
-      WHERE id = $2 
-      RETURNING *;
-    `;
-    const values = [project_name, id];
-
-    const result = await pool.query(query, values);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Invoice not found' });
-    }
-
-    console.log(`Invoice ${id} updated with new project name: ${project_name}`);
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error('Error updating project name:', err.message);
-    res.status(500).json({ message: 'Server error while updating project name' });
-  }
-});
 
 
 
