@@ -275,9 +275,9 @@ router.put('/:id', authMiddleware, async (req, res) => {
 
   try {
     // 2. Map columns to SQL format: "column_name = $1, column_name2 = $2"
-    const setClause = columns
-      .map((col, index) => `${col} = $${index + 1}`)
-      .join(', ');
+   const setClause = columns
+  .map((col, index) => `"${col}" = $${index + 1}`) // Adds double quotes
+  .join(', ');
 
     // 3. Prepare the values array matching the indices above
     const values = columns.map(col => invoiceData[col]);
