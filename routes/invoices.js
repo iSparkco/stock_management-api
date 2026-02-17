@@ -215,29 +215,32 @@ router.put('/:id', authMiddleware, async (req, res) => {
 
 router.put('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
-  const updates = req.body; // Contains { project_name: "..." } or { deleted: true }
+  const invoiceData = req.body; // This contains your full C# object
 
-  // 1. Get the keys (column names) from the body
-  const keys = Object.keys(updates);
+  // 1. Filter out the 'id' from the body so we don't try to update the primary key
+  const columns = Object.keys(invoiceData).filter(key => key !== 'id');
   
-  if (keys.length === 0) {
-    return res.status(400).json({ message: 'No fields provided for update' });
+  if (columns.length === 0) {
+    return res.status(400).json({ message: 'No data provided for update' });
   }
 
   try {
-    // 2. Build a dynamic SQL query
-    // Example result: SET project_name = $1 WHERE id = $2
-    const setClause = keys.map((key, index) => `${key} = $${index + 1}`).join(', ');
-    const values = keys.map(key => updates[key]);
-    
-    // Add the ID as the last parameter
+    // 2. Map columns to SQL format: "column_name = $1, column_name2 = $2"
+    const setClause = columns
+      .map((col, index) => `${col} = $${index + 1}`)
+      .join(', ');
+
+    // 3. Prepare the values array matching the indices above
+    const values = columns.map(col => invoiceData[col]);
+
+    // 4. Add the ID as the final parameter for the WHERE clause
     values.push(id);
-    const idParamIndex = values.length;
+    const idPosition = values.length;
 
     const query = `
       UPDATE invoices 
       SET ${setClause} 
-      WHERE id = $${idParamIndex} 
+      WHERE id = $${idPosition} 
       RETURNING *;
     `;
 
@@ -247,11 +250,11 @@ router.put('/:id', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'Invoice not found' });
     }
 
-    console.log(`Invoice ${id} updated:`, updates);
+    console.log(`Invoice ${id} updated successfully.`);
     res.json(result.rows[0]);
   } catch (err) {
-    console.error('Update Error:', err.message);
-    res.status(500).json({ message: 'Server error during dynamic update' });
+    console.error('Database Error:', err.message);
+    res.status(500).json({ message: 'Server error while updating invoice model' });
   }
 });
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
