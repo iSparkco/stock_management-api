@@ -58,10 +58,11 @@ router.get('/', authMiddleware, async (req, res) => {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 2. SEARCH INVOICES (Moved up to avoid conflict with /:id params)
 router.get('/search', authMiddleware, async (req, res) => {
-  // Extracting query parameters sent from C# HttpClient
   const { userId, startDate, endDate, invoiceNb, projectName } = req.query;
   
-  let filters = [];
+  // Initialize filters with the mandatory "deleted = false" condition
+  // We hardcode 'false' here so we don't need to pass it in the 'values' array
+  let filters = ['i.deleted = false']; 
   let values = [];
 
   // Filter by User ID
@@ -70,24 +71,25 @@ router.get('/search', authMiddleware, async (req, res) => {
     filters.push(`i.userid = $${values.length}`);
   }
 
-  // Filter by Date Range (Matches startDate and endDate from C#)
+  // Filter by Date Range
   if (startDate && endDate) {
     values.push(startDate, endDate);
     filters.push(`i.created_at::date BETWEEN $${values.length - 1} AND $${values.length}`);
   }
 
-  // Filter by Invoice Number (Exact match)
+  // Filter by Invoice Number
   if (invoiceNb) {
     values.push(invoiceNb);
     filters.push(`i.invoice_nb = $${values.length}`);
   }
 
-  // Filter by Project Name (Partial match using ILIKE)
+  // Filter by Project Name
   if (projectName) {
     values.push(`%${projectName}%`);
     filters.push(`i.project_name ILIKE $${values.length}`);
   }
 
+  // If filters has items (it always will now), join them with AND
   const whereClause = filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : '';
 
   try {
